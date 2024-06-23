@@ -19,21 +19,18 @@ Name=$ethDevice
 [Network]
 Address=$ipAddress/24
 DHCPServer=yes
+DNS=8.8.8.8 8.8.4.4
 
 [DHCPServer]
 PoolOffset=100
 PoolSize=50
 LeaseTime=1h
 EOL"
-
   echo "Configuration file has been created at $output_file"
-
   # Restart systemd-networkd to apply the new configuration
   sudo systemctl restart systemd-networkd
-
   # Enable IP forwarding
   echo 1 > /proc/sys/net/ipv4/ip_forward
-
   # Add iptables rules for NAT and forwarding
   add_iptables_rule "-t nat -A POSTROUTING -o $wifiDevice -j MASQUERADE"
   add_iptables_rule "-A FORWARD -i $wifiDevice -o $ethDevice -m state --state RELATED,ESTABLISHED -j ACCEPT"
@@ -45,10 +42,8 @@ disable_ip_forward() {
   # Revert router settings
   sudo rm "/etc/systemd/network/Router-$ethDevice.network"
   sudo systemctl restart systemd-networkd
-
   # Disable IP forwarding
   echo 0 > /proc/sys/net/ipv4/ip_forward
-
   # Remove iptables rules
   remove_iptables_rule "-t nat -D POSTROUTING -o $wifiDevice -j MASQUERADE"
   remove_iptables_rule "-D FORWARD -i $wifiDevice -o $ethDevice -m state --state RELATED,ESTABLISHED -j ACCEPT"
